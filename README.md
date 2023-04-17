@@ -19,3 +19,4 @@ Sqlite3
    check VS code and pycharm code for DB path 
    make sure mono.sqlite is in assets
    
+   Unity assets: https://drive.google.com/drive/folders/1fGXCOg1wCecwOAFC6Yj0mYJm6CrbxBPr?usp=sharing
