@@ -1,0 +1,101 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Mono.Data.Sqlite;
+using System.Data;
+using UnityEngine.TextCore.Text;
+
+public class movement : MonoBehaviour
+{
+    public Rigidbody player;
+    public float m_speed, rotatespeed;
+
+    void FixedUpdate()
+    {
+
+        {
+            static string ReadTable()
+            {
+                string dbfile = "URI=file:Assets/gestures.db";
+                using (var connection = new SqliteConnection(dbfile))
+                {
+                    connection.Open();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "SELECT * FROM Gestures ORDER BY rowid DESC LIMIT 1;";
+                        using (IDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Debug.Log(reader["hand"].ToString());
+                                return (reader["hand"].ToString());
+                            }
+                            reader.Close();
+
+                        }
+                        connection.Close();
+                        return "error";
+                    }
+                }
+            }
+
+            // string text = File.ReadAllText("C:\\Users\\darwi\\PycharmProjects\\HandSignDetection\\output.json");
+            if (ReadTable() == "Forward")
+            {
+                player.velocity = -transform.forward * m_speed * Time.deltaTime;
+            }
+            if (ReadTable() == "Back")
+            {
+                player.velocity = transform.forward * m_speed * Time.deltaTime;
+            }
+            if (ReadTable() == "Stop")
+            {
+                player.velocity = -transform.forward * 0 * Time.deltaTime;
+            }
+        }
+    }
+
+        void Update()
+        {
+            static string ReadTable()
+            {
+                string dbfile = "URI=file:Assets/gestures.db";
+                using (SqliteConnection connection = new SqliteConnection(dbfile))
+                {
+                    connection.Open();
+                    IDbCommand cmnd_read = connection.CreateCommand();
+                    IDataReader reader;
+                    string cmd = "SELECT * FROM Gestures ORDER BY rowid DESC LIMIT 1;";
+                    cmnd_read.CommandText = cmd;
+                    reader = cmnd_read.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        return (reader["hand"].ToString());
+
+                    }
+                    connection.Close();
+                }
+                return "error";
+            }
+
+            //string text = File.ReadAllText("C:\\Users\\darwi\\PycharmProjects\\HandSignDetection\\output.json");
+            if (ReadTable() == "Left")
+            {
+                transform.Rotate(0, -rotatespeed * Time.deltaTime, 0);
+            }
+            if (ReadTable() == "Right")
+            {
+                transform.Rotate(0, rotatespeed * Time.deltaTime, 0);
+            }
+            if (ReadTable() == "Up")
+            {
+                player.velocity = Vector3.up * m_speed * Time.deltaTime;
+            }
+            if (ReadTable() == "Down")
+            {
+                player.velocity = Vector3.down * m_speed * Time.deltaTime;
+            }
+        }
+    }
