@@ -12,6 +12,7 @@ Sqlite3
   https://sqlitebrowser.org/
   
  Visual studio
+    2022, set as main IDE in unity
  
  Unity editor V. 2021.3.22f1
    drag user settings and assets
