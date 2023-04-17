@@ -10,6 +10,7 @@ Pycharm 2022.3.1
 Sqlite3
   https://www.sqlite.org/download.html
   https://sqlitebrowser.org/
+  PRAGMA journal_mode wal;
   
  Visual studio
     2022, set as main IDE in unity
