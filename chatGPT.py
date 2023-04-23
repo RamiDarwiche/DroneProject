@@ -4,7 +4,7 @@ import pyttsx3
 
 text_speech = pyttsx3.init()
 # Set up the OpenAI API client
-openai.api_key = "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"
+openai.api_key = ""
 oldPrompt = "x"
 switch = 0
 initMessage = ""
