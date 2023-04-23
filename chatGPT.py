@@ -1,36 +1,49 @@
 import openai
 import sqlite3
-import gtts
-from playsound import playsound
+import pyttsx3
 
+text_speech = pyttsx3.init()
 # Set up the OpenAI API client
 openai.api_key = "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"
-
+oldPrompt = "x"
+switch = 0
+initMessage = ""
+startMessage = ""
 # Set up the model and prompt
-model_engine = "text-davinci-003"
-prompt = ""
 
 
-while prompt != "Exit":
+
+while True:
+    model_engine = "text-davinci-003"
+    prompt = ""
+
+    sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
+    cursor = sqliteConnection.cursor()
+    for row in cursor.execute('SELECT * FROM chatGPTinput ORDER BY rowid DESC LIMIT 1;'):
+        prompt = row
 
 
-    prompt = input("Enter a message: ")
+    if oldPrompt != prompt:
 
-    # Generate a response
-    completion = openai.Completion.create(
-        engine=model_engine,
-        prompt=prompt,
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=0.5,
-    )
+        # Generate a response
+        completion = openai.Completion.create(
+            engine=model_engine,
+            prompt=prompt,
+            max_tokens=1024,
+            n=1,
+            stop=None,
+            temperature=0.5,
+        )
+        response = completion.choices[0].text.lstrip()
+        print(f"\n{response}\n")
+        text_speech.say(response )
+        text_speech.runAndWait()
+        oldPrompt = prompt
+        cursor.close()
 
-    response = completion.choices[0].text.lstrip()
-    print(f"\n{response}\n")
 
-    tts = gtts.gTTS(response)
-    tts.save("tts.mp3")
-    playsound("tts.mp3")
+
+
+
 
 
