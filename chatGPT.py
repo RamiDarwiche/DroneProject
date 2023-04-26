@@ -17,7 +17,7 @@ while True:
     model_engine = "text-davinci-003"
     prompt = ""
 
-    sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
+    sqliteConnection = sqlite3.connect(r'C:\Users\Maxwe\DroneProjectv2\Assets\gestures.db')
     cursor = sqliteConnection.cursor()
     for row in cursor.execute('SELECT * FROM chatGPTinput ORDER BY rowid DESC LIMIT 1;'):
         prompt = row
