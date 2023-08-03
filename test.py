@@ -4,100 +4,97 @@ import numpy as np
 from cvzone.ClassificationModule import Classifier
 import math
 import json
-import time
 import sqlite3
 
 class HandGestures:
-    cap = cv2.VideoCapture(0)
-    detector = HandDetector(maxHands=1)
-    classifier = Classifier("Model/keras_model.h5","Model/labels.txt")
+    def __init__(self):
+        self.cap = cv2.VideoCapture(0)
+        self.detector = HandDetector(maxHands=1)
+        self.classifier = Classifier("Model/keras_model.h5","Model/labels.txt")
 
-    offset = 20
-    imgSize = 300
+        self.offset = 20
+        self.imgSize = 300
 
-    folder = "Data/Up"
-    counter = 0
+        self.folder = "Data/Up"
+        self.counter = 0
 
-    labels = ["Back", "Down", "Forward", "Left", "Right", "Stop", "Up"]
+        self.labels = ["Back", "Down", "Forward", "Left", "Right", "Stop", "Up"]
 
-    try:
-        sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
-        cursor = sqliteConnection.cursor()
-        count = cursor.execute("DELETE FROM Gestures")
-        sqliteConnection.commit()
-        print("Records deleted")
-        cursor.close()
+        try:
+            self.sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
+            self.cursor = self.sqliteConnection.cursor()
+            self.count = self.cursor.execute("DELETE FROM Gestures")
+            self.sqliteConnection.commit()
+            print("Records deleted")
+            self.cursor.close()
 
-    except sqlite3.Error as error:
-        print("Failed to delete data from sqlite table", error)
-    finally:
-        if sqliteConnection:
-            sqliteConnection.close()
-            print("The SQLite database is prepared")
+        except sqlite3.Error as error:
+            print("Failed to delete data from sqlite table", error)
+        finally:
+            if self.sqliteConnection:
+                self.sqliteConnection.close()
+                print("The SQLite database is prepared")
 
-    while True:
-        success, img = cap.read()
-        imgOutput = img.copy()
-        hands, img = detector.findHands(img)
-        if hands:
-            hand = hands[0]
-            x,y,w,h = hand['bbox']
+    def run(self):
+        while True:
+            success, img = self.cap.read()
+            imgOutput = img.copy()
+            hands, img = self.detector.findHands(img)
+            if hands:
+                hand = hands[0]
+                x, y, w, h = hand['bbox']
 
-            imgWhite = np.ones((imgSize,imgSize,3),np.uint8)*255
-            imgCrop = img[y-offset:y + h+offset,x-offset:x + w+offset]
+                imgCrop = img[y - self.offset:y + h + self.offset, x - self.offset:x + w + self.offset]
+                imgCropShape = imgCrop.shape
 
-            imgCropShape = imgCrop.shape
+                aspectRatio = h / w
 
+                if aspectRatio > 1:
+                    k = self.imgSize / h
+                    wCal = math.ceil(k * w)
+                    imgResize = cv2.resize(imgCrop, (wCal, self.imgSize))
+                    imageResizeShape = imgResize.shape
+                    wGap = math.ceil((self.imgSize - wCal) / 2)
+                    imgWhite = np.ones((self.imgSize, self.imgSize, 3), np.uint8) * 255
+                    imgWhite[:, wGap:wCal + wGap] = imgResize
+                    prediction, index = self.classifier.getPrediction(imgWhite, draw=False)
+                else:
+                    k = self.imgSize / w
+                    hCal = math.ceil(k * h)
+                    imgResize = cv2.resize(imgCrop, (self.imgSize, hCal))
+                    imageResizeShape = imgResize.shape
+                    hGap = math.ceil((self.imgSize - hCal) / 2)
+                    imgWhite = np.ones((self.imgSize, self.imgSize, 3), np.uint8) * 255
+                    imgWhite[hGap:hCal + hGap, :] = imgResize
+                    prediction, index = self.classifier.getPrediction(imgWhite, draw=False)
 
-            aspectRatio = h/w
-
-            if aspectRatio >1:
-                k = imgSize/h
-                wCal = math.ceil(k*w)
-                imgResize = cv2.resize(imgCrop, (wCal,imgSize))
-                imageResizeShape = imgResize.shape
-                wGap = math.ceil((imgSize -wCal)/2)
-                imgWhite[:,wGap:wCal+wGap] = imgResize
-                prediction, index = classifier.getPrediction(imgWhite, draw=False)
-                #print(prediction,index)
                 with open("output.json", "w") as json_file:
-                    output = json.dump(labels[index], json_file)
-                    #print("updated")
-                    json_file.close()
-                #print(labels[index])
-                try:
-                    sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
-                    cursor = sqliteConnection.cursor()
-                    #print("Successfully Connected to SQLite")
+                    json.dump(self.labels[index], json_file)
 
-                    count = cursor.execute("insert into Gestures (hand) values (?)", [labels[index]])
-                    sqliteConnection.commit()
-                    #print("Record inserted successfully into Sqlite Gestures table ", cursor.rowcount)
-                    cursor.close()
+                try:
+                    self.sqliteConnection = sqlite3.connect(r'C:\Users\darwi\test 6\Assets\gestures.db')
+                    self.cursor = self.sqliteConnection.cursor()
+                    self.count = self.cursor.execute("insert into Gestures (hand) values (?)", [self.labels[index]])
+                    self.sqliteConnection.commit()
+                    self.cursor.close()
 
                 except sqlite3.Error as error:
                     print("Failed to insert data into sqlite table", error)
                 finally:
-                    if sqliteConnection:
-                        sqliteConnection.close()
-                        #print("The SQLite connection is closed")
+                    if self.sqliteConnection:
+                        self.sqliteConnection.close()
 
-            else:
-                k = imgSize/w
-                hCal = math.ceil(k*h)
-                imgResize = cv2.resize(imgCrop, (imgSize,hCal))
-                imageResizeShape = imgResize.shape
-                hGap = math.ceil((imgSize -hCal)/2)
-                imgWhite[hGap:hCal+hGap, :] = imgResize
-                prediction, index = classifier.getPrediction(imgWhite, draw=False)
+                cv2.putText(imgOutput, self.labels[index], (x - 26, y - 26), cv2.FONT_HERSHEY_COMPLEX, 1.7, (0, 0, 255), 2)
+                cv2.rectangle(imgOutput, (x - self.offset, y - self.offset), (x + w + self.offset, y + h + self.offset), (0, 0, 255), 4)
 
-            #cv2.rectangle(imgOutput, (x - offset, y - offset-50), (x-offset+250, y - offset-50+50), (255, 255, 255), cv2.FILLED)
-            cv2.putText(imgOutput, labels[index],(x-26,y-26), cv2.FONT_HERSHEY_COMPLEX,1.7,(0,0,255),2)
-            cv2.rectangle(imgOutput,(x-offset,y-offset),(x+w+offset,y+h+offset),(0,0,255), 4)
+            cv2.imshow("Image", imgOutput)
+            key = cv2.waitKey(1)
+            if key == 27:  # Press 'Esc' to exit the loop
+                break
 
+        self.cap.release()
+        cv2.destroyAllWindows()
 
-            #cv2.imshow("ImageCrop", imgCrop)
-            #cv2.imshow("ImageWhite", imgWhite)
-
-        cv2.imshow("Image",imgOutput)
-        key = cv2.waitKey(1)
+if __name__ == "__main__":
+    hand_gestures = HandGestures()
+    hand_gestures.run()
